@@ -1,8 +1,7 @@
 const express = require('express');
-const logger = require('morgan');
 const mongoose = require('mongoose');
-
 const app = express();
+const cors = require('cors')
 const router = require('./routes/index.js');
 
 //settings
@@ -12,6 +11,7 @@ mongoose.connect('mongodb+srv://Danilo:admin@cluster0.l1hvy.mongodb.net/HomeSick
 );
 
 //middlewares
+app.use(cors());
 app.use(express.json());
 
 //routes
