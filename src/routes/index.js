@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
@@ -16,23 +17,28 @@ router.post('/SignUp', async (req, res) => {
     .then(user => {
         if(user){
             return res.status(409).json({message: 'this email is already used'});
-        }else{         
-            const user = new User({
-                _id: new mongoose.Types.ObjectId(),
-                email: req.body.email,
-                password: req.body.password,
-                firstname: req.body.firstname,
-                lastname: req.body.lastname
-            })
-            user.save().then(result => {
-                res.status(201).json({
-                    message: 'User has been created',
-                });
-            })
-            .catch(err => {
-                res.status(500).json({
-                    error: err
-                });
+        }else{   
+            bcrypt.hash(req.body.password, 10, (err, hash) => {    
+                if (err) { res.status(500).json({error: err});
+                }else{ 
+                    const user = new User({
+                        _id: new mongoose.Types.ObjectId(),
+                        email: req.body.email,
+                        password: hash,
+                        firstname: req.body.firstname,
+                        lastname: req.body.lastname
+                    })
+                    user.save().then(result => {
+                        res.status(201).json({
+                            message: 'User has been created',
+                        });
+                    })
+                    .catch(err => {
+                        res.status(500).json({
+                            error: err
+                        });
+                    })
+                }
             })
         }
     })
@@ -45,9 +51,20 @@ router.post('/Login', (req,res) => {
     User.findOne({email: req.body.email})
     .then(user => {
         if (!user) return res.status(401).json({mensaje: 'Invalid Email or Password'});
-        if (req.body.password != user.password) return res.status(401).json({mensaje: 'Invalid Email or Password'});       
-        const token = jwt.sign({ _id: user._id}, "secretkey", {expiresIn: "2h"});
-        return res.status(200).json({token: token});
+        bcrypt.compare(req.body.password, user.password, (err, result) => {
+            if(err) {
+                return res.status(401).json({
+                    message: 'Invalid Email or Password'
+                });
+            }
+            if(result) {
+                const token = jwt.sign({ _id: user._id}, "secretkey", {expiresIn: "2h"});
+                return res.status(200).json({token: token});
+            }
+            return res.status(401).json({
+                message: 'Invalid Email or Password'
+            });
+        });
     })
     .catch(err => {
         res.status(500).json({ error: err});
