@@ -5,7 +5,7 @@ const cors = require('cors')
 const router = require('./routes/index.js');
 
 //settings
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 8080);
 mongoose.connect('mongodb+srv://Danilo:admin@cluster0.l1hvy.mongodb.net/HomeSick?retryWrites=true&w=majority',
 {useNewUrlParser:true}
 );
